@@ -1,0 +1,14 @@
+[project]
+name = "capstone_v2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.129.0",
+    "jupyter>=1.1.1",
+    "numpy>=2.4.2",
+    "pandas>=3.0.1",
+    "transformers>=5.2.0"
+    
+]
