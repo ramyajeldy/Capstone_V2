@@ -2,3 +2,4 @@
 bert_results/
 __pycache__/
 *.pyc
+models/phishing_bert_final/model.safetensors
