@@ -2,22 +2,33 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 THRESHOLD = 0.12
+MODEL_PATH = "models/phishing_bert_final"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model = AutoModelForSequenceClassification.from_pretrained(
-    "models/phishing_bert_final"
-)
+_model = None
+_tokenizer = None
 
-tokenizer = AutoTokenizer.from_pretrained(
-    "models/phishing_bert_final"
-)
 
-model.to(device)
-model.eval()
+def load_model():
+    global _model, _tokenizer
+
+    if _model is None:
+        print("🔄 Loading model...")
+        _model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
+        _tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+
+        _model.to(device)
+        _model.eval()
+
+        print("✅ Model loaded successfully.")
+
+    return _model, _tokenizer
 
 
 def predict_email(text: str) -> dict:
+    model, tokenizer = load_model()
+
     inputs = tokenizer(
         text,
         return_tensors="pt",
