@@ -1,5 +1,5 @@
 .venv
 __pycache__
 .git
-.gitignore
+bert_results
 *.pyc
