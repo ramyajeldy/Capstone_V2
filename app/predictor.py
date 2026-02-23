@@ -34,6 +34,7 @@ def download_model_from_gcs():
     bucket = client.bucket(BUCKET_NAME)
 
     blobs = bucket.list_blobs(prefix=MODEL_PREFIX)
+    print(f"Downloading model files from GCS bucket '{BUCKET_NAME}' with prefix '{MODEL_PREFIX}'...")
 
     for blob in blobs:
         filename = blob.name.split("/")[-1]
