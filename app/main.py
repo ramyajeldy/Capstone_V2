@@ -14,3 +14,8 @@ def root():
 @app.post("/predict")
 def predict(request: EmailRequest):
     return predict_email(request.text)
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
