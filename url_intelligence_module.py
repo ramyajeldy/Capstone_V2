@@ -1,4 +1,18 @@
 !pip install transformers datasets torch scikit-learn python-whois idna requests tldextract confusable-homoglyphs accelerate
+
+
+
+import transformers
+from transformers import TrainingArguments
+import inspect
+
+print(transformers.__version__)
+print(inspect.signature(TrainingArguments.__init__))
+
+
+
+
+
 from __future__ import annotations
 
 import math
@@ -484,30 +498,28 @@ class URLIntelligenceModel:
             }
 
         training_args = TrainingArguments(
-            output_dir="./results",
-            overwrite_output_dir=True,
-            num_train_epochs=epochs,
-            per_device_train_batch_size=batch_size,
-            per_device_eval_batch_size=batch_size,
-            eval_strategy="epoch",
-            save_strategy="epoch",
-            logging_strategy="steps",
-            logging_steps=50,
-            load_best_model_at_end=True,
-            report_to="none",
-            learning_rate=learning_rate,
-            seed=random_state,
-        )
-
+                output_dir="./results",
+                num_train_epochs=epochs,
+                per_device_train_batch_size=batch_size,
+                per_device_eval_batch_size=batch_size,
+                eval_strategy="epoch",
+                save_strategy="epoch",
+                logging_strategy="steps",
+                logging_steps=50,
+                load_best_model_at_end=True,
+                report_to="none",
+                learning_rate=learning_rate,
+                seed=random_state,
+            )
         trainer = Trainer(
-            model=model,
-            args=training_args,
-            train_dataset=train_ds,
-            eval_dataset=eval_ds,
-            tokenizer=tokenizer,
-            data_collator=data_collator,
-            compute_metrics=compute_metrics,
-        )
+                model=model,
+                args=training_args,
+                train_dataset=train_ds,
+                eval_dataset=eval_ds,
+                processing_class=tokenizer,
+                data_collator=data_collator,
+                compute_metrics=compute_metrics,
+            )
 
         trainer.train()
         metrics = trainer.evaluate()
@@ -631,7 +643,6 @@ class URLIntelligenceModel:
                 "reasons": "; ".join(result.reasons),
             })
         return pd.DataFrame(rows)
-
 
 model = URLIntelligenceModel()
 
