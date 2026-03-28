@@ -237,8 +237,12 @@ class HomographDetector:
                 else:
                     scripts.add("NON_LATIN")
 
+        has_non_ascii = int(any(ord(c) > 127 for c in decoded))
+        mixed_script = int(len(scripts) > 1)
+        punycode_present = int("xn--" in hostname.lower())
+
         confusable_flag = 0
-        if confusables is not None and decoded:
+        if confusables is not None and decoded and has_non_ascii:
             try:
                 confusable_flag = int(bool(confusables.is_confusable(decoded)))
             except Exception:
@@ -255,9 +259,9 @@ class HomographDetector:
         return {
             "idna_decoded_host": decoded,
             "idna_changed": int(changed),
-            "punycode_present": int("xn--" in hostname.lower()),
-            "has_non_ascii_host": int(any(ord(c) > 127 for c in decoded)),
-            "mixed_script_host": int(len(scripts) > 1),
+            "punycode_present": punycode_present,
+            "has_non_ascii_host": has_non_ascii,
+            "mixed_script_host": mixed_script,
             "confusable_host": confusable_flag,
             "brand_collision_like": brand_collision,
         }
@@ -643,7 +647,6 @@ class URLIntelligenceModel:
                 "reasons": "; ".join(result.reasons),
             })
         return pd.DataFrame(rows)
-
 model = URLIntelligenceModel()
 
 metrics = model.train(
