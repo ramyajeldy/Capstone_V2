@@ -1,3 +1,4 @@
+!pip install transformers datasets torch scikit-learn python-whois idna requests tldextract confusable-homoglyphs accelerate
 from __future__ import annotations
 
 import math
