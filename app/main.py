@@ -24,7 +24,7 @@ def root():
 def predict(request: EmailRequest):
     return predict_email(request.text)
 
-@app.get("/health", description="Health check endpoint to verify API is operational")
+@app.get("/health")
 def health():
     return {"status": "healthy"}
 
