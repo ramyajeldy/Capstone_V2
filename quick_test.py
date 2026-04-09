@@ -1,17 +1,42 @@
-from app.services.bert_service import BertEmailService
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-service = BertEmailService()
+THRESHOLD = 0.12
 
-sample_text = """
-Subject: Urgent Account Verification
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-Dear User,
-Your account has been suspended. Click the link below to verify immediately.
-"""
+model = AutoModelForSequenceClassification.from_pretrained(
+    "models/phishing_bert_final"
+)
 
-score = service.predict_risk(sample_text)
-print("Phishing risk score:", score)
+tokenizer = AutoTokenizer.from_pretrained(
+    "models/phishing_bert_final"
+)
 
+model.to(device)
+model.eval()
+
+def predict_email(text):
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=256
+    ).to(device)
+
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.nn.functional.softmax(outputs.logits, dim=1)
+
+    phishing_prob = probs[0][1].item()
+
+    return {
+        "risk_score": round(phishing_prob, 4),
+        "confidence": round(max(probs[0]).item(), 4),
+        "label": "high_risk" if phishing_prob >= THRESHOLD else "low_risk"
+    }
+
+print(predict_email("Urgent! Verify your bank account now."))
 
 from app.services.html_parser import HTMLSuspicionService
 
