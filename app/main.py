@@ -1,30 +1,39 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
-from app.predictor import predict_email
-from threading import Thread
-from app.predictor import load_model
+from pydantic import BaseModel
+from time import perf_counter
+from app.services.email_analyzer import analyze_email
 
-app = FastAPI(title="Phishing Detection API")
-
-@app.on_event("startup")
-def warmup_model():
-    Thread(target=load_model).start()
-
+app = FastAPI(title="CyberSecure AI - Phishing Analyzer")
 
 
 class EmailRequest(BaseModel):
-    text: str = Field(..., example="Click here to verify your account: http://malicious-link.com")
+    subject: str = ""
+    sender: str = ""
+    body_text: str = ""
+    html_text: str = ""
 
 
-@app.get("/", description="Welcome endpoint that checks if the API is running")
+@app.get("/")
 def root():
-    return {"status": "API is running"}
+    return {"message": "CyberSecure AI API is running"}
 
-@app.post("/predict", description="Predict whether an email is phishing or safe")
-def predict(request: EmailRequest):
-    return predict_email(request.text)
+
+@app.post("/analyze")
+def analyze(request: EmailRequest):
+    start = perf_counter()
+    
+
+    result = analyze_email(
+        subject=request.subject,
+        sender=request.sender,
+        body_text=request.body_text,
+        html_text=request.html_text,
+        attachments=[]
+    )
+
+    result["latency_ms"] = round((perf_counter() - start) * 1000, 2)
+    return result
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
-
+    return {"status": "ok"}

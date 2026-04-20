@@ -1,50 +1,18 @@
+from dataclasses import asdict
+from pathlib import Path
 from app.utils.url_extractor import extract_urls
+from url_intelligence_module import URLIntelligenceModel
 
-SUSPICIOUS_KEYWORDS = [
-    "login", "verify", "secure", "account", "reset",
-    "password", "update", "confirm", "wallet", "invoice", "pay"
-]
+BASE_DIR = Path(__file__).resolve().parents[2]
+URL_MODEL_DIR = BASE_DIR / "models" / "bert_url_model"
 
-SHORTENERS = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd"]
+url_model = URLIntelligenceModel(model_dir=str(URL_MODEL_DIR))
 
-SUSPICIOUS_TLDS = [".xyz", ".top", ".click", ".buzz", ".info"]
+try:
+    url_model.extractor.refresh_openphish()
+except Exception:
+    pass
 
-def score_single_url(url: str) -> dict:
-    score = 0.0
-    reasons = []
-
-    lower_url = url.lower()
-
-    if any(shortener in lower_url for shortener in SHORTENERS):
-        score += 0.30
-        reasons.append("URL shortener used")
-
-    if "@" in url:
-        score += 0.20
-        reasons.append("@ symbol found in URL")
-
-    if len(url) > 75:
-        score += 0.15
-        reasons.append("Unusually long URL")
-
-    if sum(1 for kw in SUSPICIOUS_KEYWORDS if kw in lower_url) >= 2:
-        score += 0.20
-        reasons.append("Multiple suspicious keywords in URL")
-
-    if any(tld in lower_url for tld in SUSPICIOUS_TLDS):
-        score += 0.20
-        reasons.append("Suspicious top-level domain")
-
-    if lower_url.count("-") >= 2:
-        score += 0.10
-        reasons.append("Multiple hyphens in URL")
-
-    return {
-        "url": url,
-        "final_probability": round(min(score, 1.0), 4),
-        "prediction": "phishing" if score >= 0.5 else "benign",
-        "reasons": reasons if reasons else ["No major URL red flags detected"]
-    }
 
 def analyze_urls(text: str) -> dict:
     urls = extract_urls(text)
@@ -57,20 +25,26 @@ def analyze_urls(text: str) -> dict:
             "url_reasons": []
         }
 
-    results = [score_single_url(url) for url in urls]
-    scores = [r["final_probability"] for r in results]
-
+    results = []
     all_reasons = []
+
+    for url in urls:
+        result = url_model.predict_url(url)
+        results.append(result)
+        all_reasons.extend(result.reasons)
+
+    probabilities = [r.final_probability for r in results]
+
+    unique_reasons = []
     seen = set()
-    for r in results:
-        for reason in r["reasons"]:
-            if reason not in seen:
-                seen.add(reason)
-                all_reasons.append(reason)
+    for reason in all_reasons:
+        if reason not in seen:
+            seen.add(reason)
+            unique_reasons.append(reason)
 
     return {
-        "urls": results,
-        "max_url_score": round(max(scores), 4),
-        "avg_url_score": round(sum(scores) / len(scores), 4),
-        "url_reasons": all_reasons
+        "urls": [asdict(r) for r in results],
+        "max_url_score": round(max(probabilities), 4),
+        "avg_url_score": round(sum(probabilities) / len(probabilities), 4),
+        "url_reasons": unique_reasons
     }

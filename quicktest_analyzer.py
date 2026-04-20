@@ -16,7 +16,7 @@ print("URL Score:", result["url_score"])
 print("HTML Score:", result["html_score"])
 print("HTML Signals:", result["html_signals"])
 print("URL Reasons:", result["url_reasons"])
-print("Important Tokens:", result["important_tokens"])
+
 
 print("\nSAFE EMAIL")
 safe_result = analyze_email(
@@ -34,7 +34,7 @@ print("URL Score:", safe_result["url_score"])
 print("HTML Score:", safe_result["html_score"])
 print("HTML Signals:", safe_result["html_signals"])
 print("URL Reasons:", safe_result["url_reasons"])
-print("Important Tokens:", safe_result["important_tokens"])
+
 
 print("\nOCR-BASED PHISHING EMAIL")
 ocr_demo = analyze_email(
