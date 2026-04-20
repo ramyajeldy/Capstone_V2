@@ -1,20 +1,7 @@
-!pip install transformers datasets torch scikit-learn python-whois idna requests tldextract confusable-homoglyphs accelerate
-
-
-
+from __future__ import annotations
 import transformers
 from transformers import TrainingArguments
 import inspect
-
-print(transformers.__version__)
-print(inspect.signature(TrainingArguments.__init__))
-
-
-
-
-
-from __future__ import annotations
-
 import math
 import re
 import time
@@ -24,7 +11,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse, parse_qs
-
 import numpy as np
 import pandas as pd
 import requests
@@ -40,6 +26,10 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
+
+
+print(transformers.__version__)
+print(inspect.signature(TrainingArguments.__init__))
 
 try:
     import whois
@@ -647,30 +637,3 @@ class URLIntelligenceModel:
                 "reasons": "; ".join(result.reasons),
             })
         return pd.DataFrame(rows)
-model = URLIntelligenceModel()
-
-metrics = model.train(
-    model_dir="bert_url_model",
-    dataset_name="Mitake/PhishingURLsANDBenignURLs",
-    text_col="url",
-    label_col="label",
-    sample_size=50000,
-    epochs=1,
-    batch_size=8
-)
-
-metrics
-model = URLIntelligenceModel(model_dir="bert_url_model")
-model.extractor.refresh_openphish()
-from dataclasses import asdict
-
-result = model.predict_url("http://xn--pple-43d.com/login")
-asdict(result)
-urls = [
-    "https://www.google.com",
-    "http://xn--pple-43d.com/login",
-    "http://paypal-secure-login.verify-user.com"
-]
-
-df_results = model.predict_many(urls)
-df_results

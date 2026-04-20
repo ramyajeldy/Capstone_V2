@@ -1,3 +1,5 @@
+from unittest import result
+
 from bs4 import BeautifulSoup
 import re
 
@@ -81,3 +83,13 @@ class HTMLSuspicionService:
             "html_suspicion_score": round(score, 4),
             "signals": signals
         }
+        
+_html_service = HTMLSuspicionService()
+
+def get_html_score(html_text: str) -> float:
+    result = _html_service.analyze_html(html_text)
+    return result["html_suspicion_score"]
+
+def get_html_signals(html_text: str) -> list[str]:
+    result = _html_service.analyze_html(html_text)
+    return result["signals"]

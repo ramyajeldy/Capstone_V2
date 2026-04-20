@@ -1,38 +1,33 @@
-# app/services/bert_service.py
-
-import os
+from pathlib import Path
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-EMAIL_MODEL_PATH = "models/phishing_bert_final"
+BASE_DIR = Path(__file__).resolve().parents[2]
+MODEL_DIR = BASE_DIR / "models" / "phishing_bert_final"
 
-device = torch.device("cpu")
+tokenizer = AutoTokenizer.from_pretrained(str(MODEL_DIR), local_files_only=True)
+model = AutoModelForSequenceClassification.from_pretrained(str(MODEL_DIR), local_files_only=True)
+model.eval()
 
-class BertEmailService:
-    def __init__(self, model_path: str = EMAIL_MODEL_PATH):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
-        self.model.to(device)
-        self.model.eval()
+THRESHOLD = 0.75
 
-    def predict_risk(self, text: str) -> float:
-        if not text or not text.strip():
-            return 0.0
+def get_bert_score(text: str) -> dict:
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=256
+    )
 
-        inputs = self.tokenizer(
-            text,
-            return_tensors="pt",
-            truncation=True,
-            padding=True,
-            max_length=512
-        )
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.nn.functional.softmax(outputs.logits, dim=1)
 
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+    phishing_prob = float(probs[0][1].item())
+    confidence = float(torch.max(probs[0]).item())
 
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            probs = torch.softmax(outputs.logits, dim=1)
-
-        # assuming class 1 = phishing/fake
-        risk_score = probs[0][1].item()
-        return round(float(risk_score), 4)
+    return {
+        "bert_score": round(phishing_prob, 4),
+        "confidence": round(confidence, 4),
+        "label": "high_risk" if phishing_prob >= THRESHOLD else "low_risk"
+    }
