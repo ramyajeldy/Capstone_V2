@@ -1,4 +1,5 @@
 beautifulsoup4
+python-multipart
 confusable-homoglyphs
 fastapi
 google-cloud-storage

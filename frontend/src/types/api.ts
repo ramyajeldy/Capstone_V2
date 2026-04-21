@@ -29,6 +29,19 @@ export interface EmailAnalysisResponse {
   latency_ms: number;
 }
 
+/** Returned by POST /analyze-image — superset of EmailAnalysisResponse */
+export interface ImageAnalysisResponse extends EmailAnalysisResponse {
+  ocr_text: string;
+  source: 'image_ocr';
+  filename: string;
+}
+
+export interface OcrResponse {
+  text: string;
+  char_count: number;
+  filename: string;
+}
+
 export interface JobAnalysisRequest {
   text: string;
 }
