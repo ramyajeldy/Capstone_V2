@@ -10,8 +10,6 @@ Original file is located at
 
 
 from __future__ import annotations
-import transformers
-from transformers import TrainingArguments
 import inspect
 import math
 import re
@@ -24,20 +22,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
 import requests
 import tldextract
 import torch
 import torch.nn.functional as F
-from datasets import Dataset, load_dataset
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
-    DataCollatorWithPadding,
-    Trainer,
-    TrainingArguments,
 )
 
 try:
@@ -401,7 +392,10 @@ class URLIntelligenceModel:
         label_col: str = "label",
         sample_size: Optional[int] = None,
         random_state: int = 42,
-    ) -> Tuple[Dataset, Dataset]:
+    ) -> Tuple[Any, Any]:
+        from datasets import Dataset, load_dataset
+        import pandas as pd
+
         ds = load_dataset(dataset_name)
 
         df = ds["train"].to_pandas()[[text_col, label_col]].copy()
@@ -462,6 +456,10 @@ class URLIntelligenceModel:
         learning_rate: float = 2e-5,
         max_length: int = 256,
     ) -> Dict[str, Any]:
+        import numpy as np
+        from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
+        from transformers import DataCollatorWithPadding, Trainer, TrainingArguments
+
         train_ds, eval_ds = self.prepare_training_dataset(
             dataset_name=dataset_name,
             text_col=text_col,
@@ -628,7 +626,9 @@ class URLIntelligenceModel:
             reasons=reasons,
         )
 
-    def predict_many(self, urls: List[str], threshold: float = 0.5, use_whois: bool = True) -> pd.DataFrame:
+    def predict_many(self, urls: List[str], threshold: float = 0.5, use_whois: bool = True):
+        import pandas as pd
+
         rows = []
         for url in urls:
             result = self.predict_url(url, threshold=threshold, use_whois=use_whois)

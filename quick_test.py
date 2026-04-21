@@ -60,10 +60,6 @@ result = html_service.analyze_html(sample_html)
 print(result)
 
 
-from app.services.url_intelligence import URLIntelligenceService
-
-service = URLIntelligenceService()
-
 sample_text = """
 Hello user,
 Please verify your account immediately:
@@ -71,5 +67,7 @@ http://xn--pple-43d.com/login
 Also visit https://www.google.com for reference.
 """
 
-result = service.analyze_text(sample_text)
+from app.services.url_intelligence_service import analyze_urls
+
+result = analyze_urls(sample_text)
 print(result)

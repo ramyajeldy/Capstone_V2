@@ -21,4 +21,5 @@ dependencies = [
     "beautifulsoup4>=4.14.3",
     "tldextract>=5.3.1",
     "idna>=3.11",
+    "pytesseract"
 ]

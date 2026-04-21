@@ -1,9 +1,16 @@
+import os
+import shutil
 from PIL import Image
 import pytesseract
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
 import io  
+
+_WINDOWS_TESSERACT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+if os.name == "nt" and os.path.exists(_WINDOWS_TESSERACT):
+    pytesseract.pytesseract.tesseract_cmd = _WINDOWS_TESSERACT
+elif shutil.which("tesseract"):
+    pytesseract.pytesseract.tesseract_cmd = shutil.which("tesseract")
 
 def extract_text_from_image_bytes(image_bytes: bytes) -> str:
     try:

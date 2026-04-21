@@ -1,28 +1,26 @@
-# Use slim Python image
-FROM python:3.10
+FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (needed for torch sometimes)
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    --no-install-recommends \
+    tesseract-ocr \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency files first (for caching)
-COPY pyproject.toml uv.lock ./
+COPY requirements.txt .
 
-# Install uv
-RUN pip install uv
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PORT=8080
 
-# Install dependencies
-RUN uv sync --no-dev
+RUN pip install --upgrade pip && \
+    pip install --index-url https://download.pytorch.org/whl/cpu torch && \
+    pip install -r requirements.txt
 
-# Copy application code
 COPY . .
 
-# Expose FastAPI port
-EXPOSE 8000
+EXPOSE 8080
 
-# Run server
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
