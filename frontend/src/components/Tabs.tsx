@@ -5,8 +5,9 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { id: 'email', label: 'Email Analyzer', icon: '📧' },
+  { id: 'gmail', label: 'Analyze Email', icon: '📬' },
   { id: 'job', label: 'Job Scam Detector', icon: '💼' },
+  { id: 'url', label: 'URL Checker', icon: '🔗' },
   { id: 'education', label: 'Phishing Awareness', icon: '📚' },
 ];
 

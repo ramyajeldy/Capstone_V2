@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { Header } from './components/Header';
 import { Tabs } from './components/Tabs';
-import { EmailAnalyzerPage } from './pages/EmailAnalyzerPage';
+import { GmailAnalyzerPage } from './pages/GmailAnalyzerPage';
 import { JobDetectorPage } from './pages/JobDetectorPage';
+import { UrlCheckerPage } from './pages/UrlCheckerPage';
 import { EducationPage } from './pages/EducationPage';
 
-type TabId = 'email' | 'job' | 'education';
+type TabId = 'gmail' | 'job' | 'url' | 'education';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('email');
+  const [activeTab, setActiveTab] = useState<TabId>('gmail');
 
   return (
     <div className="app">
       <Header />
       <Tabs active={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
       <main className="main-content">
-        {activeTab === 'email' && <EmailAnalyzerPage />}
+        {activeTab === 'gmail' && <GmailAnalyzerPage />}
         {activeTab === 'job' && <JobDetectorPage />}
+        {activeTab === 'url' && <UrlCheckerPage />}
         {activeTab === 'education' && <EducationPage />}
       </main>
       <footer className="footer">

@@ -8,9 +8,9 @@ interface UrlListProps {
 function normalize(raw: string | DetectedUrl): DetectedUrl {
   if (typeof raw === 'string') {
     try {
-      return { url: raw, domain: new URL(raw).hostname };
+      return { url: raw, hostname: new URL(raw).hostname };
     } catch {
-      return { url: raw, domain: raw };
+      return { url: raw, hostname: raw };
     }
   }
   return raw;
@@ -27,17 +27,32 @@ export function UrlList({ urls, reasons }: UrlListProps) {
           <div className="url-list">
             {urls.map((raw, i) => {
               const item = normalize(raw);
+              const isSuspicious =
+                item.is_suspicious ||
+                (item.final_probability !== undefined && item.final_probability >= 0.5) ||
+                item.prediction === 'phishing';
+              const displayDomain = item.hostname || item.domain || item.url;
+              const itemReasons = item.reasons ?? (item.reason ? [item.reason] : []);
+              const prob = item.final_probability ?? item.transformer_probability;
+
               return (
                 <div
                   key={i}
-                  className={`url-item ${item.is_suspicious ? 'url-suspicious' : 'url-clean'}`}
+                  className={`url-item ${isSuspicious ? 'url-suspicious' : 'url-clean'}`}
                 >
-                  <div className="url-domain">{item.domain || item.url}</div>
+                  <div className="url-domain">{displayDomain}</div>
                   <div className="url-full">{item.url}</div>
                   {item.prediction && (
                     <div className="url-prediction">{item.prediction}</div>
                   )}
-                  {item.reason && <div className="url-reason">{item.reason}</div>}
+                  {prob !== undefined && (
+                    <div className="url-prob">
+                      Risk: {Math.round(prob * 100)}%
+                    </div>
+                  )}
+                  {itemReasons.map((r, j) => (
+                    <div key={j} className="url-reason">{r}</div>
+                  ))}
                 </div>
               );
             })}

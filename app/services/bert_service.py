@@ -2,6 +2,9 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
+# -----------------------------
+# LOAD MODEL
+# -----------------------------
 BASE_DIR = Path(__file__).resolve().parents[2]
 MODEL_DIR = BASE_DIR / "models" / "phishing_bert_final"
 
@@ -9,16 +12,30 @@ tokenizer = AutoTokenizer.from_pretrained(str(MODEL_DIR), local_files_only=True)
 model = AutoModelForSequenceClassification.from_pretrained(str(MODEL_DIR), local_files_only=True)
 model.eval()
 
-THRESHOLD = 0.75
+# -----------------------------
+# FIXED THRESHOLD (IMPORTANT)
+# -----------------------------
+THRESHOLD = 0.12   # ✅ from your training notebook
 
+# -----------------------------
+# BERT SCORING FUNCTION
+# -----------------------------
 def get_bert_score(text: str) -> dict:
+    
+    # 🧪 DEBUG LOGS
+    print("\n========== BERT DEBUG ==========")
+    print("INPUT TEXT (first 200 chars):")
+    print(text[:200])
+
+    # Tokenize
     inputs = tokenizer(
         text,
         return_tensors="pt",
         truncation=True,
-        max_length=256
+        max_length=512   # ✅ increased from 256
     )
 
+    # Predict
     with torch.no_grad():
         outputs = model(**inputs)
         probs = torch.nn.functional.softmax(outputs.logits, dim=1)
@@ -26,8 +43,18 @@ def get_bert_score(text: str) -> dict:
     phishing_prob = float(probs[0][1].item())
     confidence = float(torch.max(probs[0]).item())
 
+    # 🧪 DEBUG LOGS
+    print("PHISHING PROB:", phishing_prob)
+    print("CONFIDENCE:", confidence)
+    print("THRESHOLD:", THRESHOLD)
+
+    label = "high_risk" if phishing_prob >= THRESHOLD else "low_risk"
+
+    print("FINAL LABEL:", label)
+    print("================================\n")
+
     return {
         "bert_score": round(phishing_prob, 4),
         "confidence": round(confidence, 4),
-        "label": "high_risk" if phishing_prob >= THRESHOLD else "low_risk"
+        "label": label
     }

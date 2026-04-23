@@ -5,9 +5,13 @@ import type {
   OcrResponse,
   JobAnalysisRequest,
   JobAnalysisResponse,
+  UrlCheckRequest,
+  UrlCheckResponse,
+  RiskLabel,
+  DetectedUrl,
 } from '../types/api';
 
-const BASE_URL = 'https://phishing-api-demo-777140345679.us-central1.run.app';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 async function post<T>(endpoint: string, body: unknown): Promise<T> {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -56,6 +60,26 @@ export async function analyzeJobDescription(
   request: JobAnalysisRequest
 ): Promise<JobAnalysisResponse> {
   return post<JobAnalysisResponse>('/analyze-jd', request);
+}
+
+export async function checkUrl(request: UrlCheckRequest): Promise<UrlCheckResponse> {
+  // /check-url is not on Cloud Run yet — route through /analyze which runs the same URL intelligence engine
+  const res = await post<EmailAnalysisResponse>('/analyze', {
+    subject: '',
+    sender: '',
+    body_text: request.url,
+    html_text: '',
+  });
+  const score = res.url_score;
+  const label: RiskLabel =
+    score >= 0.7 ? 'high_risk' : score >= 0.4 ? 'medium_risk' : 'low_risk';
+  return {
+    url: request.url,
+    risk_score: score,
+    label,
+    reasons: res.url_reasons,
+    details: res.urls.filter((u): u is DetectedUrl => typeof u !== 'string'),
+  };
 }
 
 /*

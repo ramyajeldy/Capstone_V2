@@ -10,9 +10,21 @@ export interface EmailAnalysisRequest {
 
 export interface DetectedUrl {
   url: string;
+  // fields returned by url_intelligence_service
+  normalized_url?: string;
+  hostname?: string;
+  registered_domain?: string;
+  transformer_probability?: number;
+  final_probability?: number;
+  prediction?: string;
+  reasons?: string[];
+  whois_domain_age_days?: number;
+  whois_lookup_ok?: number;
+  openphish_exact_match?: number;
+  openphish_domain_match?: number;
+  // legacy fallback fields
   domain?: string;
   is_suspicious?: boolean;
-  prediction?: string;
   reason?: string;
 }
 
@@ -27,9 +39,9 @@ export interface EmailAnalysisResponse {
   url_reasons: string[];
   urls: (string | DetectedUrl)[];
   latency_ms: number;
+  ocr_text?: string;
 }
 
-/** Returned by POST /analyze-image — superset of EmailAnalysisResponse */
 export interface ImageAnalysisResponse extends EmailAnalysisResponse {
   ocr_text: string;
   source: 'image_ocr';
@@ -53,5 +65,18 @@ export interface JobAnalysisResponse {
   legitimate_probability: number;
   confidence: number;
   threshold_used: number;
+  model_name: string;
   message?: string;
+}
+
+export interface UrlCheckRequest {
+  url: string;
+}
+
+export interface UrlCheckResponse {
+  url: string;
+  risk_score: number;
+  label: RiskLabel;
+  reasons: string[];
+  details: DetectedUrl[];
 }

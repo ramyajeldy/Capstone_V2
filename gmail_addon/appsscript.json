@@ -1,0 +1,34 @@
+{
+  "timeZone": "America/Toronto",
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "urlFetchWhitelist": [
+    "https://phishing-api-demo-777140345679.us-central1.run.app/"
+  ],
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/gmail.addons.execute",
+    "https://www.googleapis.com/auth/gmail.addons.current.message.readonly",
+    "https://www.googleapis.com/auth/script.external_request"
+  ],
+  "addOns": {
+    "common": {
+      "name": "CyberSecure AI — Phishing Detector",
+      "logoUrl": "https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png",
+      "layoutProperties": {
+        "primaryColor": "#1e40af",
+        "secondaryColor": "#2563eb"
+      },
+      "homepageTrigger": {
+        "runFunction": "onHomepage"
+      }
+    },
+    "gmail": {
+      "contextualTriggers": [
+        {
+          "unconditional": {},
+          "onTriggerFunction": "onGmailMessageOpen"
+        }
+      ]
+    }
+  }
+}
