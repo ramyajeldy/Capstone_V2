@@ -1,0 +1,17 @@
+beautifulsoup4
+python-multipart
+confusable-homoglyphs
+fastapi
+google-cloud-storage
+idna
+lxml
+pillow
+pydantic
+pytesseract
+python-whois
+requests
+tldextract
+torch
+transformers
+uvicorn[standard]
+python-multipart

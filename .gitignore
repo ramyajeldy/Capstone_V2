@@ -1,0 +1,7 @@
+.venv/
+bert_results/
+__pycache__/
+*.pyc
+
+frontend/node_modules/*
+models/*
