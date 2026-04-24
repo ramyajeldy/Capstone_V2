@@ -21,7 +21,6 @@ from transformers import (
     Trainer
 )
 
-!pip install evaluate # Install the missing library
 import evaluate
 
 dataset = load_dataset("drorrabin/phishing_emails-data")

@@ -40,6 +40,19 @@ export interface EmailAnalysisResponse {
   urls: (string | DetectedUrl)[];
   latency_ms: number;
   ocr_text?: string;
+  debug?: {
+    subject_length: number;
+    sender_length: number;
+    body_text_length: number;
+    html_text_length: number;
+    ocr_text_length: number;
+    combined_text_length: number;
+    combined_text_preview: string;
+    url_scan_text_length: number;
+    extracted_url_count: number;
+    extracted_urls: string[];
+    html_signal_count: number;
+  };
 }
 
 export interface ImageAnalysisResponse extends EmailAnalysisResponse {

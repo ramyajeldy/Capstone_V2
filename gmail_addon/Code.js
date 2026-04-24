@@ -1,18 +1,12 @@
 var API_BASE = 'https://phishing-api-demo-777140345679.us-central1.run.app';
+var UI_VERSION = 'v1.0';
 
 // ── Entry point: fires when user opens an email ───────────────────────────────
 
 function onGmailMessageOpen(e) {
-  var messageId = e.gmail.messageId;
-  var accessToken = e.gmail.accessToken;
-  GmailApp.setCurrentMessageAccessToken(accessToken);
+  var emailData = getCurrentEmailData_(e);
 
-  var message = GmailApp.getMessageById(messageId);
-  var subject = message.getSubject() || '';
-  var sender  = message.getFrom()    || '';
-  var body    = message.getPlainBody() || '';
-
-  return buildPreviewCard(subject, sender, body);
+  return buildPreviewCard(emailData);
 }
 
 // ── Homepage card (add-on opened outside an email) ───────────────────────────
@@ -22,7 +16,7 @@ function onHomepage() {
     .setHeader(
       CardService.newCardHeader()
         .setTitle('CyberSecure AI')
-        .setSubtitle('Open an email to analyze it')
+        .setSubtitle('Open an email to analyze it • ' + UI_VERSION)
         .setImageUrl('https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png')
     );
 
@@ -39,15 +33,11 @@ function onHomepage() {
 
 // ── Preview card: shows subject + sender and the Analyze button ───────────────
 
-function buildPreviewCard(subject, sender, body) {
-  var safeBody = body.length > 4000 ? body.substring(0, 4000) : body;
-
+function buildPreviewCard(emailData) {
   var analyzeAction = CardService.newAction()
     .setFunctionName('analyzeCurrentEmail')
     .setParameters({
-      subject: subject,
-      sender:  sender,
-      body:    safeBody
+      messageId: emailData.messageId || ''
     });
 
   var analyzeBtn = CardService.newTextButton()
@@ -61,12 +51,15 @@ function buildPreviewCard(subject, sender, body) {
     .addWidget(
       CardService.newKeyValue()
         .setTopLabel('Subject')
-        .setContent(subject || '(no subject)')
+        .setContent(emailData.subject || '(no subject)')
     )
     .addWidget(
       CardService.newKeyValue()
         .setTopLabel('From')
-        .setContent(sender || '(unknown sender)')
+        .setContent(emailData.sender || '(unknown sender)')
+    )
+    .addWidget(
+      CardService.newTextParagraph().setText('<b>UI Version:</b> ' + UI_VERSION)
     )
     .addWidget(CardService.newButtonSet().addButton(analyzeBtn));
 
@@ -74,7 +67,7 @@ function buildPreviewCard(subject, sender, body) {
     .setHeader(
       CardService.newCardHeader()
         .setTitle('CyberSecure AI')
-        .setSubtitle('Phishing Detector')
+        .setSubtitle('Phishing Detector • ' + UI_VERSION)
         .setImageUrl('https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png')
     )
     .addSection(section)
@@ -85,16 +78,23 @@ function buildPreviewCard(subject, sender, body) {
 
 function analyzeCurrentEmail(e) {
   var params  = e.parameters;
-  var subject = params.subject || '';
-  var sender  = params.sender  || '';
-  var body    = params.body    || '';
+  var messageId = params.messageId || '';
+  var emailData = getCurrentEmailData_(e, messageId);
 
-  var payload = JSON.stringify({
-    subject:   subject,
-    sender:    sender,
-    body_text: body,
-    html_text: ''
-  });
+  var payloadObject = {
+    subject:   emailData.subject,
+    sender:    emailData.sender,
+    body_text: emailData.bodyText,
+    html_text: emailData.htmlText
+  };
+  var payload = JSON.stringify(payloadObject);
+
+  Logger.log('CyberSecure payload summary: %s', JSON.stringify({
+    subjectLength: (emailData.subject || '').length,
+    senderLength: (emailData.sender || '').length,
+    bodyTextLength: (emailData.bodyText || '').length,
+    htmlTextLength: (emailData.htmlText || '').length
+  }));
 
   var options = {
     method:          'POST',
@@ -106,9 +106,14 @@ function analyzeCurrentEmail(e) {
   try {
     var response = UrlFetchApp.fetch(API_BASE + '/analyze', options);
     var data     = JSON.parse(response.getContentText());
+
+    if (response.getResponseCode() >= 400) {
+      throw new Error(data.message || data.error || response.getContentText());
+    }
+
     return CardService.newActionResponseBuilder()
       .setNavigation(
-        CardService.newNavigation().pushCard(buildResultCard(data, subject, sender))
+        CardService.newNavigation().pushCard(buildResultCard(data, emailData.subject, emailData.sender))
       )
       .build();
   } catch (err) {
@@ -120,9 +125,34 @@ function analyzeCurrentEmail(e) {
   }
 }
 
+function getCurrentEmailData_(e, fallbackMessageId) {
+  var gmailData = e.gmail || {};
+  var messageId = gmailData.messageId || fallbackMessageId || '';
+  var accessToken = gmailData.accessToken || '';
+
+  if (accessToken) {
+    GmailApp.setCurrentMessageAccessToken(accessToken);
+  }
+
+  if (!messageId) {
+    throw new Error('Could not determine the current Gmail message.');
+  }
+
+  var message = GmailApp.getMessageById(messageId);
+
+  return {
+    messageId: messageId,
+    subject: message.getSubject() || '',
+    sender: message.getFrom() || '',
+    bodyText: message.getPlainBody() || '',
+    htmlText: message.getBody() || ''
+  };
+}
+
 // ── Result card ───────────────────────────────────────────────────────────────
 
 function buildResultCard(data, subject, sender) {
+  var debug = data.debug || {};
   var score     = Math.round((data.risk_score  || 0) * 100);
   var bert      = Math.round((data.bert_score  || 0) * 100);
   var urlScore  = Math.round((data.url_score   || 0) * 100);
@@ -193,17 +223,37 @@ function buildResultCard(data, subject, sender) {
     );
   }
 
+  var debugLines = [
+    'Subject length: ' + (debug.subject_length || 0),
+    'Sender length: ' + (debug.sender_length || 0),
+    'Body length: ' + (debug.body_text_length || 0),
+    'HTML length: ' + (debug.html_text_length || 0),
+    'Combined text length: ' + (debug.combined_text_length || 0),
+    'Extracted URL count: ' + (debug.extracted_url_count || 0)
+  ];
+
+  if (debug.extracted_urls && debug.extracted_urls.length > 0) {
+    debugLines.push('URLs: ' + debug.extracted_urls.join(', '));
+  }
+
+  var debugSection = CardService.newCardSection()
+    .setHeader('Debug Input Summary')
+    .addWidget(
+      CardService.newTextParagraph().setText(debugLines.join('\n'))
+    );
+
   // ── Stay Safe tips (high risk only) ──
   var card = CardService.newCardBuilder()
     .setHeader(
       CardService.newCardHeader()
         .setTitle('Analysis Result')
-        .setSubtitle(subject || '(no subject)')
+        .setSubtitle((subject || '(no subject)') + ' • ' + UI_VERSION)
         .setImageUrl('https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png')
     )
     .addSection(summarySection)
     .addSection(scoresSection)
-    .addSection(reasonsSection);
+    .addSection(reasonsSection)
+    .addSection(debugSection);
 
   if (label === 'high_risk') {
     var tipsSection = CardService.newCardSection()
@@ -229,7 +279,7 @@ function buildErrorCard(message) {
     .setHeader(
       CardService.newCardHeader()
         .setTitle('Analysis Failed')
-        .setSubtitle('Could not reach the API')
+        .setSubtitle('Could not reach the API • ' + UI_VERSION)
     )
     .addSection(
       CardService.newCardSection()
